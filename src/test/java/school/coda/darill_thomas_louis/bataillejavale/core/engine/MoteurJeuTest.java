@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import school.coda.darill_thomas_louis.bataillejavale.core.event.ResultatTir;
 import school.coda.darill_thomas_louis.bataillejavale.core.model.EtatJeu;
+import school.coda.darill_thomas_louis.bataillejavale.core.model.Session;
 import school.coda.darill_thomas_louis.bataillejavale.core.model.Vaisseau;
 import school.coda.darill_thomas_louis.bataillejavale.infrastructure.database.JoueurRepository;
 import school.coda.darill_thomas_louis.bataillejavale.infrastructure.database.PartieRepository;
@@ -31,6 +32,7 @@ class MoteurJeuTest {
 
     @BeforeEach
     void setUp() {
+        Session.idJoueur = 42;
         moteur = new MoteurJeu(new Random(0), partieRepo, joueurRepo);
     }
 
@@ -72,5 +74,24 @@ class MoteurJeuTest {
         assertThat(patrouilleur.getCasesTouchees()).isEqualTo(1);
         assertThat(etat.getJoueur1().getGrilleRadar().getHistoriqueTirs()[0][0]).isEqualTo(ResultatTir.TOUCHE);
         verifyNoInteractions(joueurRepo);
+    }
+
+    @Test
+    @DisplayName("Exécuter un tir qui coule le dernier vaisseau termine la partie en victoire")
+    void executerTirJoueur_dernierVaisseauCoule_termineLaPartieEnVictoire() {
+        
+        EtatJeu etat = new EtatJeu();
+        Vaisseau patrouilleur = new Vaisseau("Patrouilleur", 2);
+        patrouilleur.setCasesTouchees(1);
+        etat.getJoueur2().getGrilleOcean().placerVaisseau(patrouilleur, 0, 0, true);
+        etat.getJoueur2().getFlotte().add(patrouilleur);
+
+        MoteurJeu.RapportTir rapport = moteur.executerTirJoueur(etat, 7, 1, 0, false);
+
+        assertThat(rapport.resultat).isEqualTo(ResultatTir.COULE);
+        assertThat(rapport.partieTerminee).isTrue();
+        assertThat(rapport.victoire).isTrue();
+        verify(partieRepo).terminerPartie(7, "TERMINEE_VICTOIRE", 42);
+        verify(joueurRepo).updateStats(true);
     }
 }
