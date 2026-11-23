@@ -67,41 +67,32 @@ public class MoteurJeu {
     // --- ACTIONS DE COMBAT ---
 
     public RapportTir executerTirJoueur(EtatJeu etat, int idPartie, int x, int y, boolean estInvite) {
-        JoueurPlay attaquant = etat.getJoueur1();
-        JoueurPlay defenseur = etat.getJoueur2();
-
-        RapportTir rapport = new RapportTir();
-        rapport.x = x; rapport.y = y;
-        rapport.cible = defenseur.getGrilleOcean().getVaisseauAt(x, y);
-        rapport.resultat = defenseur.getGrilleOcean().recevoirTir(x, y);
-        attaquant.getGrilleRadar().enregistrerTir(x, y, rapport.resultat);
-
-        etat.setTourCourant(etat.getTourCourant() + 1);
-        partieRepo.mettreAJourPartie(idPartie, preparerEtatPourDB(etat, estInvite));
-
-        verifierEtCloturerPartie(etat, idPartie, rapport);
+        RapportTir rapport = resoudreTir(etat.getJoueur1(), etat.getJoueur2(), x, y);
+        finaliserTour(etat, idPartie, estInvite, rapport);
         return rapport;
     }
 
     public RapportTir executerTourCPU(EtatJeu etat, int idPartie) {
-        JoueurPlay cpu = etat.getJoueur2();
-        JoueurPlay joueur = etat.getJoueur1();
-
-        int[] coords = calculerCibleCPU(cpu);
-        int x = coords[0];
-        int y = coords[1];
-
-        RapportTir rapport = new RapportTir();
-        rapport.x = x; rapport.y = y;
-        rapport.cible = joueur.getGrilleOcean().getVaisseauAt(x, y);
-        rapport.resultat = joueur.getGrilleOcean().recevoirTir(x, y);
-        cpu.getGrilleRadar().enregistrerTir(x, y, rapport.resultat);
-
-        etat.setTourCourant(etat.getTourCourant() + 1);
-        partieRepo.mettreAJourPartie(idPartie, etat);
-
-        verifierEtCloturerPartie(etat, idPartie, rapport);
+        int[] coords = calculerCibleCPU(etat.getJoueur2());
+        RapportTir rapport = resoudreTir(etat.getJoueur2(), etat.getJoueur1(), coords[0], coords[1]);
+        finaliserTour(etat, idPartie, false, rapport);
         return rapport;
+    }
+
+    private RapportTir resoudreTir(JoueurPlay attaquant, JoueurPlay defenseur, int x, int y) {
+        RapportTir rapport = new RapportTir();
+        rapport.x = x;
+        rapport.y = y;
+        rapport.cible = defenseur.getGrilleOcean().getVaisseauAt(x, y);
+        rapport.resultat = defenseur.getGrilleOcean().recevoirTir(x, y);
+        attaquant.getGrilleRadar().enregistrerTir(x, y, rapport.resultat);
+        return rapport;
+    }
+
+    private void finaliserTour(EtatJeu etat, int idPartie, boolean estInvite, RapportTir rapport) {
+        etat.setTourCourant(etat.getTourCourant() + 1);
+        partieRepo.mettreAJourPartie(idPartie, preparerEtatPourDB(etat, estInvite));
+        verifierEtCloturerPartie(etat, idPartie, rapport);
     }
 
     private void verifierEtCloturerPartie(EtatJeu etat, int idPartie, RapportTir rapport) {
