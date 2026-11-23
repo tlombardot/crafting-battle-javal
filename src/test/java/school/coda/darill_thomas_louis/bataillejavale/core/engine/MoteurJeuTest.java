@@ -16,6 +16,7 @@ import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class MoteurJeuTest {
@@ -52,5 +53,24 @@ class MoteurJeuTest {
         assertThat(etat.getJoueur1().getGrilleRadar().getHistoriqueTirs()[5][5]).isEqualTo(ResultatTir.RATE);
         assertThat(etat.getTourCourant()).isEqualTo(1);
         verify(partieRepo).mettreAJourPartie(1, etat);
+    }
+
+    @Test
+    @DisplayName("Exécuter un tir sur un vaisseau qui n'est pas coulé retourne TOUCHE sans terminer la partie")
+    void executerTirJoueur_surVaisseauNonCoule_retourneToucheSansTerminerLaPartie() {
+
+        EtatJeu etat = new EtatJeu();
+        Vaisseau patrouilleur = new Vaisseau("Patrouilleur", 2);
+        etat.getJoueur2().getGrilleOcean().placerVaisseau(patrouilleur, 0, 0, true);
+        etat.getJoueur2().getFlotte().add(patrouilleur);
+
+        MoteurJeu.RapportTir rapport = moteur.executerTirJoueur(etat, 1, 0, 0, false);
+
+        assertThat(rapport.resultat).isEqualTo(ResultatTir.TOUCHE);
+        assertThat(rapport.cible).isSameAs(patrouilleur);
+        assertThat(rapport.partieTerminee).isFalse();
+        assertThat(patrouilleur.getCasesTouchees()).isEqualTo(1);
+        assertThat(etat.getJoueur1().getGrilleRadar().getHistoriqueTirs()[0][0]).isEqualTo(ResultatTir.TOUCHE);
+        verifyNoInteractions(joueurRepo);
     }
 }
