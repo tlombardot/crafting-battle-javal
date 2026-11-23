@@ -112,4 +112,42 @@ class MoteurJeuTest {
         assertThat(etatSauvegarde.getJoueur2()).isSameAs(etat.getJoueur1());
         assertThat(etatSauvegarde.getTourCourant()).isEqualTo(1);
     }
+
+    @Test
+    @DisplayName("Quand l'ordinateur coule le dernier vaisseau du joueur, la partie se termine en défaite")
+    void executerTourCPU_couleDernierVaisseauJoueur_termineLaPartieEnDefaite() {
+        MoteurJeu moteurDeterministe = new MoteurJeu(new StubRandom(2, 3), partieRepo, joueurRepo);
+        EtatJeu etat = new EtatJeu();
+        Vaisseau patrouilleur = new Vaisseau("Patrouilleur", 2);
+        patrouilleur.setCasesTouchees(1);
+        etat.getJoueur1().getGrilleOcean().placerVaisseau(patrouilleur, 2, 3, true);
+        etat.getJoueur1().getFlotte().add(patrouilleur);
+
+        MoteurJeu.RapportTir rapport = moteurDeterministe.executerTourCPU(etat, 5);
+
+        assertThat(rapport.x).isEqualTo(2);
+        assertThat(rapport.y).isEqualTo(3);
+        assertThat(rapport.resultat).isEqualTo(ResultatTir.COULE);
+        assertThat(rapport.partieTerminee).isTrue();
+        assertThat(rapport.victoire).isFalse();
+        assertThat(etat.getJoueur2().getGrilleRadar().getHistoriqueTirs()[2][3]).isEqualTo(ResultatTir.COULE);
+        assertThat(etat.getTourCourant()).isEqualTo(1);
+        verify(partieRepo).mettreAJourPartie(5, etat);
+        verify(partieRepo).terminerPartie(5, "TERMINEE_DEFAITE", -1);
+        verify(joueurRepo).updateStats(false);
+    }
+
+    private static class StubRandom extends Random {
+        private final int[] valeurs;
+        private int index = 0;
+
+        StubRandom(int... valeurs) {
+            this.valeurs = valeurs;
+        }
+
+        @Override
+        public int nextInt(int bound) {
+            return valeurs[index++];
+        }
+    }
 }
