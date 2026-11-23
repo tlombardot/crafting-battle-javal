@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MoteurJeuTest {
@@ -135,6 +138,22 @@ class MoteurJeuTest {
         verify(partieRepo).mettreAJourPartie(5, etat);
         verify(partieRepo).terminerPartie(5, "TERMINEE_DEFAITE", -1);
         verify(joueurRepo).updateStats(false);
+    }
+
+    @ParameterizedTest(name = "statut={0} -> adversaireRejoint={1}")
+    @DisplayName("Vérifie si l'adversaire a rejoint à partir du statut de la partie")
+    @CsvSource(nullValues = "NULL", value = {
+            "EN_COURS, true",
+            "EN_ATTENTE, false",
+            "TERMINEE_VICTOIRE, false",
+            "NULL, false"
+    })
+    void verifierAdversaireRejoint_selonStatutPartie_retourneResultatAttendu(String statut, boolean attendu) {
+        when(partieRepo.getStatutPartie(1)).thenReturn(statut);
+
+        boolean aRejoint = moteur.verifierAdversaireRejoint(1);
+
+        assertThat(aRejoint).isEqualTo(attendu);
     }
 
     private static class StubRandom extends Random {
