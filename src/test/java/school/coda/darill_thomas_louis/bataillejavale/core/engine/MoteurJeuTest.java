@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import school.coda.darill_thomas_louis.bataillejavale.core.event.ResultatTir;
@@ -16,6 +17,7 @@ import school.coda.darill_thomas_louis.bataillejavale.infrastructure.database.Pa
 import java.util.Random;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -93,5 +95,21 @@ class MoteurJeuTest {
         assertThat(rapport.victoire).isTrue();
         verify(partieRepo).terminerPartie(7, "TERMINEE_VICTOIRE", 42);
         verify(joueurRepo).updateStats(true);
+    }
+
+    @Test
+    @DisplayName("En mode invité, les joueurs sont inversés pour la sauvegarde, inverse bien joueur 1 et joueur 2")
+    void executerTirJoueur_enModeInvite_inverseLesJoueursPourLaSauvegarde() {
+
+        EtatJeu etat = new EtatJeu();
+        ArgumentCaptor<EtatJeu> etatCaptor = ArgumentCaptor.forClass(EtatJeu.class);
+
+        moteur.executerTirJoueur(etat, 10, 3, 4, true);
+
+        verify(partieRepo).mettreAJourPartie(eq(10), etatCaptor.capture());
+        EtatJeu etatSauvegarde = etatCaptor.getValue();
+        assertThat(etatSauvegarde.getJoueur1()).isSameAs(etat.getJoueur2());
+        assertThat(etatSauvegarde.getJoueur2()).isSameAs(etat.getJoueur1());
+        assertThat(etatSauvegarde.getTourCourant()).isEqualTo(1);
     }
 }
