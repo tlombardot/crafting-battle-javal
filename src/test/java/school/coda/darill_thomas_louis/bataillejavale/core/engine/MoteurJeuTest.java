@@ -156,6 +156,38 @@ class MoteurJeuTest {
         assertThat(aRejoint).isEqualTo(attendu);
     }
 
+    @Test
+    @DisplayName("La réparation de sauvegarde remet les cases du plateau aux vrais vaisseaux de la flotte")
+    void reparerLiensMemoireSauvegarde_reattacheLesReferencesDesVaisseauxSurLePlateau() {
+        EtatJeu etat = new EtatJeu();
+        Vaisseau vaisseauFlotte = new Vaisseau("Patrouilleur", 2);
+        Vaisseau copieDeserialisee = new Vaisseau("Patrouilleur", 2);
+        etat.getJoueur1().getFlotte().add(vaisseauFlotte);
+        etat.getJoueur1().getGrilleOcean().placerVaisseau(copieDeserialisee, 0, 0, true);
+
+        moteur.reparerLiensMemoireSauvegarde(etat);
+
+        assertThat(etat.getJoueur1().getGrilleOcean().getVaisseauAt(0, 0)).isSameAs(vaisseauFlotte);
+        assertThat(etat.getJoueur1().getGrilleOcean().getVaisseauAt(1, 0)).isSameAs(vaisseauFlotte);
+    }
+
+    @Test
+    @DisplayName("La réparation de sauvegarde remet les dégâts des vaisseaux depuis l'historique radar adverse")
+    void reparerLiensMemoireSauvegarde_recalculeLesDegatsDepuisHistoriqueRadar() {
+        EtatJeu etat = new EtatJeu();
+        Vaisseau cuirasse = new Vaisseau("Cuirassé", 4);
+        cuirasse.setCasesTouchees(99);
+        etat.getJoueur1().getFlotte().add(cuirasse);
+        etat.getJoueur1().getGrilleOcean().placerVaisseau(cuirasse, 0, 0, true);
+        etat.getJoueur2().getGrilleRadar().enregistrerTir(0, 0, ResultatTir.TOUCHE);
+        etat.getJoueur2().getGrilleRadar().enregistrerTir(1, 0, ResultatTir.COULE);
+        etat.getJoueur2().getGrilleRadar().enregistrerTir(5, 5, ResultatTir.RATE);
+
+        moteur.reparerLiensMemoireSauvegarde(etat);
+
+        assertThat(cuirasse.getCasesTouchees()).isEqualTo(2);
+    }
+
     private static class StubRandom extends Random {
         private final int[] valeurs;
         private int index = 0;
