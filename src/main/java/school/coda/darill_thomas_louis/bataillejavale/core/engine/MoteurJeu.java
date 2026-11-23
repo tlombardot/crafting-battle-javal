@@ -167,27 +167,47 @@ public class MoteurJeu {
     }
 
     private void reparerJoueur(JoueurPlay defenseur, JoueurPlay attaquant) {
+        reattacherVaisseauxSurPlateau(defenseur);
+        recalculerDegatsDepuisHistorique(defenseur, attaquant);
+    }
+
+    private void reattacherVaisseauxSurPlateau(JoueurPlay defenseur) {
         Vaisseau[][] plateau = defenseur.getGrilleOcean().getPlateau();
         List<Vaisseau> flotte = defenseur.getFlotte();
-        for (int x = 0; x < 10; x++) {
-            for (int y = 0; y < 10; y++) {
+        for (int x = 0; x < defenseur.getGrilleOcean().getTailleX(); x++) {
+            for (int y = 0; y < defenseur.getGrilleOcean().getTailleY(); y++) {
                 if (plateau[x][y] != null) {
-                    for (Vaisseau vraiVaisseau : flotte) {
-                        if (vraiVaisseau.getNom().equals(plateau[x][y].getNom())) {
-                            plateau[x][y] = vraiVaisseau; break;
-                        }
-                    }
+                    plateau[x][y] = trouverVaisseauParNom(flotte, plateau[x][y]);
                 }
             }
         }
-        for (Vaisseau v : flotte) v.setCasesTouchees(0);
+    }
+
+    private Vaisseau trouverVaisseauParNom(List<Vaisseau> flotte, Vaisseau cible) {
+        for (Vaisseau vraiVaisseau : flotte) {
+            if (vraiVaisseau.getNom().equals(cible.getNom())) {
+                return vraiVaisseau;
+            }
+        }
+        return cible;
+    }
+
+    private void recalculerDegatsDepuisHistorique(JoueurPlay defenseur, JoueurPlay attaquant) {
+        for (Vaisseau vaisseau : defenseur.getFlotte()) {
+            vaisseau.setCasesTouchees(0);
+        }
+        Vaisseau[][] plateau = defenseur.getGrilleOcean().getPlateau();
         ResultatTir[][] historique = attaquant.getGrilleRadar().getHistoriqueTirs();
-        for (int x = 0; x < 10; x++) {
-            for (int y = 0; y < 10; y++) {
-                if ((historique[x][y] == ResultatTir.TOUCHE || historique[x][y] == ResultatTir.COULE) && plateau[x][y] != null) {
+        for (int x = 0; x < defenseur.getGrilleOcean().getTailleX(); x++) {
+            for (int y = 0; y < defenseur.getGrilleOcean().getTailleY(); y++) {
+                if (estTirReussi(historique[x][y]) && plateau[x][y] != null) {
                     plateau[x][y].recevoirDegat(x, y);
                 }
             }
         }
+    }
+
+    private boolean estTirReussi(ResultatTir resultat) {
+        return resultat == ResultatTir.TOUCHE || resultat == ResultatTir.COULE;
     }
 }
