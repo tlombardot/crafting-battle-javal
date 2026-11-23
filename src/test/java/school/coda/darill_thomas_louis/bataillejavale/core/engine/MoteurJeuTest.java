@@ -1,0 +1,56 @@
+package school.coda.darill_thomas_louis.bataillejavale.core.engine;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import school.coda.darill_thomas_louis.bataillejavale.core.event.ResultatTir;
+import school.coda.darill_thomas_louis.bataillejavale.core.model.EtatJeu;
+import school.coda.darill_thomas_louis.bataillejavale.core.model.Vaisseau;
+import school.coda.darill_thomas_louis.bataillejavale.infrastructure.database.JoueurRepository;
+import school.coda.darill_thomas_louis.bataillejavale.infrastructure.database.PartieRepository;
+
+import java.util.Random;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+
+@ExtendWith(MockitoExtension.class)
+class MoteurJeuTest {
+
+    @Mock
+    private PartieRepository partieRepo;
+
+    @Mock
+    private JoueurRepository joueurRepo;
+
+    private MoteurJeu moteur;
+
+    @BeforeEach
+    void setUp() {
+        moteur = new MoteurJeu(new Random(0), partieRepo, joueurRepo);
+    }
+
+    @Test
+    @DisplayName("Exécuter un tir sur une case vide retourne RATE avec le radar mis à jour")
+    void executerTirJoueur_surCaseVide_retourneRateEtMetAJourLeRadar() {
+        
+        EtatJeu etat = new EtatJeu();
+        Vaisseau patrouilleur = new Vaisseau("Patrouilleur", 2);
+        etat.getJoueur2().getGrilleOcean().placerVaisseau(patrouilleur, 0, 0, true);
+        etat.getJoueur2().getFlotte().add(patrouilleur);
+
+        
+        MoteurJeu.RapportTir rapport = moteur.executerTirJoueur(etat, 1, 5, 5, false);
+
+        
+        assertThat(rapport.resultat).isEqualTo(ResultatTir.RATE);
+        assertThat(rapport.cible).isNull();
+        assertThat(rapport.partieTerminee).isFalse();
+        assertThat(etat.getJoueur1().getGrilleRadar().getHistoriqueTirs()[5][5]).isEqualTo(ResultatTir.RATE);
+        assertThat(etat.getTourCourant()).isEqualTo(1);
+        verify(partieRepo).mettreAJourPartie(1, etat);
+    }
+}

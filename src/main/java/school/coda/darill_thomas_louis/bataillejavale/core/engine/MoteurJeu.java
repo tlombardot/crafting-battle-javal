@@ -18,9 +18,19 @@ import java.util.Random;
  */
 public class MoteurJeu {
 
-    private final Random random = new Random();
-    private final PartieRepository partieRepo = new PartieRepository();
-    private final JoueurRepository joueurRepo = new JoueurRepository();
+    private final Random random;
+    private final PartieRepository partieRepo;
+    private final JoueurRepository joueurRepo;
+
+    public MoteurJeu() {
+        this(new Random(), new PartieRepository(), new JoueurRepository());
+    }
+
+    public MoteurJeu(Random random, PartieRepository partieRepo, JoueurRepository joueurRepo) {
+        this.random = random;
+        this.partieRepo = partieRepo;
+        this.joueurRepo = joueurRepo;
+    }
 
     // --- INITIALISATION ---
 
